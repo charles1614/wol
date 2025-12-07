@@ -100,6 +100,50 @@ sudo nano /etc/systemd/system/asus-agent.service
 sudo systemctl restart asus-agent
 ```
 
+## Docker Deployment (Self-Hosted)
+
+You can also deploy using Docker.
+
+### 1. Build the Image
+
+Run from the root of the monorepo:
+
+```bash
+docker build -t asus-web -f apps/web/Dockerfile .
+```
+
+### 2. Run the Container
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  --name asus-web \
+  -e AUTH_SECRET=<your-secret> \
+  -e AUTH_URL=http://localhost:3000 \
+  -e ADMIN_USERNAME=admin \
+  -e ADMIN_PASSWORD=<your-password> \
+  -e JDXB_UID=<your-uid> \
+  -e JDXB_OWCODE=<your-owcode> \
+  -e JDXB_PEERID=<your-peerid> \
+  -e ASUS_MAC=<your-mac> \
+  -e AGENT_URL=http://host.docker.internal:3001 \
+  -e AGENT_SECRET=<your-agent-secret> \
+  asus-web
+```
+
+> Note: If accessing the agent on the host machine, use `http://host.docker.internal:3001` (on Docker Desktop) or the host's LAN IP.
+
+### GitHub Actions
+
+This repository includes a GitHub Actions workflow that automatically builds and pushes the Docker image to GitHub Container Registry (GHCR) on pushes to `main`.
+
+To run the image from GHCR:
+
+```bash
+docker run -d -p 3000:3000 ghcr.io/<your-username>/<repo-name>:latest
+```
+
+
 ## Getting JDXB Credentials
 
 1. Login to https://yc.iepose.com/jdxb_console
