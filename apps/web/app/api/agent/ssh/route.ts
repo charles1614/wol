@@ -39,14 +39,27 @@ export async function GET(): Promise<Response> {
     });
 
     if (!response.ok) {
+      const text = await response.text();
+      console.error(`Agent SSH API error (${response.status}):`, text.substring(0, 500));
+
       return NextResponse.json<SshApiResponse>(
-        { success: false, error: `Agent error: ${response.status}` },
+        { success: false, error: `Agent returned ${response.status}: ${text.substring(0, 100)}` },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json<SshApiResponse>(data);
+    // Try to parse JSON, but handle HTML/text responses gracefully
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      return NextResponse.json<SshApiResponse>(data);
+    } catch (e) {
+      console.error("Failed to parse agent SSH response:", text.substring(0, 500));
+      return NextResponse.json<SshApiResponse>(
+        { success: false, error: `Invalid response from agent. Expected JSON, got: ${text.substring(0, 50)}...` },
+        { status: 502 }
+      );
+    }
   } catch (error) {
     console.error("Agent SSH API error:", error);
 

@@ -35,14 +35,37 @@ export async function GET(): Promise<Response> {
     });
 
     if (!response.ok) {
+      const text = await response.text();
+      console.error(`Agent error (${response.status}):`, text.substring(0, 500)); // Log first 500 chars
+
       return NextResponse.json<KeepAliveStatusResponse>(
-        { success: false, active: false, pid: null, error: `Agent error: ${response.status}` },
+        {
+          success: false,
+          active: false,
+          pid: null,
+          error: `Agent returned ${response.status}: ${text.substring(0, 100)}`
+        },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json<KeepAliveStatusResponse>(data);
+    // Try to parse JSON, but handle HTML/text responses gracefully
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      return NextResponse.json<KeepAliveStatusResponse>(data);
+    } catch (e) {
+      console.error("Failed to parse agent response:", text.substring(0, 500));
+      return NextResponse.json<KeepAliveStatusResponse>(
+        {
+          success: false,
+          active: false,
+          pid: null,
+          error: `Invalid response from agent. Expected JSON, got: ${text.substring(0, 50)}...`
+        },
+        { status: 502 }
+      );
+    }
   } catch (error) {
     console.error("Agent keep-alive status error:", error);
     if (error instanceof Error && (error.name === "AbortError" || error.message.includes("fetch"))) {
