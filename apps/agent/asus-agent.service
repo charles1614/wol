@@ -1,0 +1,22 @@
+[Unit]
+Description=ASUS WOL Agent - Server Status Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/asus-wol
+Environment=NODE_ENV=production
+Environment=AGENT_PORT=3001
+Environment=API_SECRET=your-secret-key
+ExecStart=/usr/local/bin/pnpm --filter @asus/agent start
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=asus-agent
+
+[Install]
+WantedBy=multi-user.target
