@@ -1,14 +1,67 @@
 .container {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  background: rgba(19, 19, 22, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color var(--transition-base), background var(--transition-base);
+}
+
+/* Flashlight effect - follows mouse */
+.container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(500px circle at var(--mouse-x) var(--mouse-y),
+      rgba(94, 106, 210, 0.03) 0%,
+      transparent 50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+}
+
+.container:hover::before {
+  opacity: 1;
+}
+
+/* Border glow effect on hover */
+.container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(350px circle at var(--mouse-x) var(--mouse-y),
+      rgba(94, 106, 210, 0.06) 0%,
+      transparent 50%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+}
+
+.container:hover::after {
+  opacity: 1;
+}
+
+.container:hover {
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(19, 19, 22, 0.8);
 }
 
 .loading {
   text-align: center;
   color: var(--text-secondary);
   padding: var(--space-8);
+  position: relative;
+  z-index: 1;
 }
 
 .header {
@@ -16,11 +69,57 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-5);
+  position: relative;
+  z-index: 1;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .title {
   font-size: 1rem;
   font-weight: 600;
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.refreshButton:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+.refreshButton:disabled {
+  cursor: not-allowed;
+}
+
+.refreshButton.spinning svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .statusBadge {

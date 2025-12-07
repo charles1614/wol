@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { sendWolSignal, getDeviceInfo } from "@/lib/wol";
 import styles from "./WolCard.module.css";
 
@@ -17,6 +17,17 @@ export default function WolCard() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [lastWake, setLastWake] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Mouse tracking for flashlight effect
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    cardRef.current.style.setProperty('--mouse-x', `${x}%`);
+    cardRef.current.style.setProperty('--mouse-y', `${y}%`);
+  }, []);
 
   useEffect(() => {
     // Load device info
@@ -120,7 +131,11 @@ export default function WolCard() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
+      <div
+        ref={cardRef}
+        className={styles.card}
+        onMouseMove={handleMouseMove}
+      >
         <div className={styles.deviceIcon}>
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="6" width="32" height="24" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
@@ -159,6 +174,8 @@ export default function WolCard() {
           disabled={loading}
           aria-label="Wake ASUS PC"
         >
+          <div className={styles.borderBeam}></div>
+          <div className={styles.borderBeamInner}></div>
           <div className={styles.buttonGlow}></div>
           <div className={styles.buttonContent}>
             <svg className={styles.powerIcon} width="32" height="32" viewBox="0 0 24 24" fill="none">

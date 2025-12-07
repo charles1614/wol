@@ -3,34 +3,39 @@
    ============================================ */
 
 :root {
-  /* Colors - Dark Theme inspired by Linear */
-  --bg-primary: #0a0a0b;
-  --bg-secondary: #111113;
-  --bg-tertiary: #18181b;
-  --bg-elevated: #1f1f23;
-  --bg-hover: #27272a;
+  /* Colors - Dark Theme (Linear-style refined) */
+  --bg-primary: #0d0d0f;
+  --bg-secondary: #131316;
+  --bg-tertiary: #1a1a1f;
+  --bg-elevated: #222227;
+  --bg-hover: #2a2a30;
+  --bg-active: #323238;
 
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
-  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  --border-focus: rgba(99, 102, 241, 0.5);
 
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --text-muted: #52525b;
+  --text-primary: #f5f5f7;
+  --text-secondary: #8e8e93;
+  --text-tertiary: #636366;
+  --text-muted: #48484a;
 
-  /* Accent Colors */
-  --accent-primary: #6366f1;
-  --accent-secondary: #818cf8;
-  --accent-glow: rgba(99, 102, 241, 0.4);
+  /* Accent Colors - Linear purple/indigo */
+  --accent-primary: #5e6ad2;
+  --accent-secondary: #8b92e0;
+  --accent-tertiary: #454cad;
+  --accent-glow: rgba(94, 106, 210, 0.35);
+  --accent-gradient: linear-gradient(135deg, #5e6ad2 0%, #8b5cf6 50%, #5e6ad2 100%);
 
-  --success: #22c55e;
-  --success-bg: rgba(34, 197, 94, 0.1);
-  --error: #ef4444;
-  --error-bg: rgba(239, 68, 68, 0.1);
-  --warning: #f59e0b;
+  --success: #3fb950;
+  --success-bg: rgba(63, 185, 80, 0.12);
+  --error: #f85149;
+  --error-bg: rgba(248, 81, 73, 0.12);
+  --warning: #d29922;
+  --warning-bg: rgba(210, 153, 34, 0.12);
 
-  /* Spacing */
+  /* Spacing - tighter for Linear feel */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -41,23 +46,25 @@
   --space-10: 40px;
   --space-12: 48px;
 
-  /* Radius */
+  /* Radius - Linear uses smaller, sharper radii */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 40px var(--accent-glow);
+  /* Shadows - more subtle */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 30px var(--accent-glow);
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Transitions - snappier like Linear */
+  --transition-fast: 120ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-base: 180ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-slow: 280ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* ============================================
@@ -76,15 +83,43 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
   min-height: 100vh;
   overflow-x: hidden;
+  letter-spacing: -0.011em;
+}
+
+/* Noise texture overlay for Linear-style grain */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Grid pattern overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 70%);
 }
 
 a {
@@ -94,6 +129,7 @@ a {
 
 button {
   font-family: inherit;
+  letter-spacing: inherit;
 }
 
 /* ============================================
@@ -111,32 +147,32 @@ button {
 .gradient-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.3;
-  animation: float 20s ease-in-out infinite;
+  filter: blur(100px);
+  opacity: 0.2;
+  animation: float 25s ease-in-out infinite;
 }
 
 .orb-1 {
-  width: 600px;
-  height: 600px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  top: -200px;
-  right: -200px;
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, #5e6ad2 0%, #7c3aed 100%);
+  top: -150px;
+  right: -100px;
   animation-delay: 0s;
 }
 
 .orb-2 {
-  width: 400px;
-  height: 400px;
-  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  bottom: -100px;
-  left: -100px;
-  animation-delay: -7s;
+  width: 350px;
+  height: 350px;
+  background: linear-gradient(135deg, #5e6ad2 0%, #3b82f6 100%);
+  bottom: -80px;
+  left: -80px;
+  animation-delay: -8s;
 }
 
 .orb-3 {
-  width: 300px;
-  height: 300px;
+  width: 250px;
+  height: 250px;
   background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
   top: 50%;
   left: 50%;
@@ -216,6 +252,68 @@ button {
 }
 
 /* ============================================
+   Border Beam Animation
+   ============================================ */
+
+@keyframes border-beam {
+  0% {
+    offset-distance: 0%;
+  }
+
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+/* ============================================
+   Fade In / Slide In Animations
+   ============================================ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0.01;
+    transform: translateY(20px);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0.01;
+    transform: scale(0.95);
+    filter: blur(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* ============================================
+   Text Clip Slide Animation
+   ============================================ */
+
+@keyframes textClipReveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(30%);
+  }
+
+  to {
+    clip-path: inset(0 0 0% 0);
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
    Utility Classes
    ============================================ */
 
@@ -229,4 +327,25 @@ button {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* Animate on load utility classes */
+.animate-fade-in {
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in-delay-1 {
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+.animate-fade-in-delay-2 {
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+.animate-scale-in {
+  animation: fadeInScale 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-text-reveal {
+  animation: textClipReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

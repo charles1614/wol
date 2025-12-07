@@ -1,21 +1,55 @@
 .container {
-  max-width: 600px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .header {
   text-align: center;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-12);
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  margin-bottom: var(--space-2);
+  font-size: 2.5rem;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  margin-bottom: var(--space-3);
+  background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: textClipReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .subtitle {
-  font-size: 1rem;
-  color: var(--text-secondary);
+  font-size: 1.0625rem;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.statusSection {
+  min-width: 0;
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+.wolSection {
+  min-width: 0;
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
 }

@@ -22,7 +22,9 @@ export async function POST() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://yc.iepose.com",
+        "Referer": "https://yc.iepose.com/",
       },
       body: JSON.stringify(payload),
     });

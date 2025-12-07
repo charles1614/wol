@@ -1,62 +1,108 @@
 .container {
-  max-width: 480px;
+  max-width: 420px;
   margin: 0 auto;
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
 }
 
 /* Device Card */
 .card {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
   position: relative;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+  background: rgba(19, 19, 22, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-xl);
-  padding: var(--space-6);
+  padding: var(--space-8) var(--space-6);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: var(--space-5);
   overflow: hidden;
+  transition: border-color var(--transition-base), background var(--transition-base);
 }
 
+/* Flashlight effect - follows mouse */
 .card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.03) 0%, transparent 50%);
+  background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y),
+      rgba(94, 106, 210, 0.04) 0%,
+      transparent 50%);
   pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+/* Border glow effect on hover */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y),
+      rgba(94, 106, 210, 0.08) 0%,
+      transparent 50%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+}
+
+.card:hover::after {
+  opacity: 1;
+}
+
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(19, 19, 22, 0.8);
 }
 
 .deviceIcon {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+  position: relative;
+  z-index: 1;
 }
 
 .deviceInfo {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  position: relative;
+  z-index: 1;
 }
 
 .deviceName {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 .deviceMac {
   font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-  font-size: 0.8125rem;
-  color: var(--text-tertiary);
-  background: var(--bg-tertiary);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
 }
 
 .deviceMeta {
@@ -75,28 +121,47 @@
   color: var(--text-tertiary);
 }
 
-/* Wake Button */
+/* Wake Button - Gradient purple design */
 .wakeButton {
   position: relative;
-  width: 140px;
-  height: 140px;
+  width: 110px;
+  height: 110px;
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-primary) 0%, #4f46e5 100%);
+  background: linear-gradient(145deg, #5e6ad2 0%, #7c3aed 50%, #8b5cf6 100%);
   cursor: pointer;
   transition: all var(--transition-base);
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
   overflow: hidden;
+  z-index: 1;
+}
+
+.wakeButton:hover {
+  background: linear-gradient(145deg, #6b77db 0%, #8b4cef 50%, #9d6eff 100%);
+  transform: scale(1.04);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3), 0 12px 32px rgba(124, 58, 237, 0.35);
+}
+
+.wakeButton:active {
+  transform: scale(0.97);
+}
+
+/* Border beam - now subtle */
+.wakeButton .borderBeam {
+  display: none;
+}
+
+.wakeButton .borderBeamInner {
+  display: none;
 }
 
 .wakeButton::before {
   content: '';
   position: absolute;
-  inset: 2px;
-  background: linear-gradient(135deg, #4f46e5 0%, var(--accent-primary) 100%);
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 40%);
   border-radius: 50%;
-  opacity: 0;
-  transition: opacity var(--transition-base);
+  opacity: 1;
 }
 
 .wakeButton:hover {

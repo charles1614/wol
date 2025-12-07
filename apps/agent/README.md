@@ -14,6 +14,8 @@ HTTP server that exposes SSH monitoring and system suspend APIs for the ASUS WOL
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/ssh` | GET | Returns active SSH connections |
+| `/api/ssh/kill` | POST | Kill specific SSH connection |
+| `/api/ssh/kill-all` | POST | Kill all SSH connections |
 | `/api/suspend` | POST | Suspends the system |
 | `/health` | GET | Health check |
 
@@ -77,7 +79,7 @@ This will install all dependencies including the shared package.
 Edit the systemd service file:
 
 ```bash
-sudo nano /opt/asus-wol/apps/agent/asus-agent.service
+sudo vim /opt/asus-wol/apps/agent/asus-agent.service
 ```
 
 Update these lines:
@@ -85,7 +87,7 @@ Update these lines:
 ```ini
 WorkingDirectory=/opt/asus-wol
 Environment=API_SECRET=<your-secret-key>  # Must match AGENT_SECRET in web app
-ExecStart=/usr/bin/pnpm --filter @asus/agent start
+ExecStart=/root/.nvm/versions/node/v24.11.1/bin/pnpm --filter @asus/agent start
 ```
 
 ### Step 5: Install Systemd Service

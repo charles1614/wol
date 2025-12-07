@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { SshConnection } from "@asus/shared";
 import styles from "./ServerStatus.module.css";
 
@@ -28,13 +28,26 @@ interface KillResponse {
 export default function ServerStatus() {
   const [sshData, setSshData] = useState<SshApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [suspending, setSuspending] = useState(false);
   const [suspendResult, setSuspendResult] = useState<SuspendResponse | null>(null);
   const [killingConnection, setKillingConnection] = useState<string | null>(null);
   const [killingAll, setKillingAll] = useState(false);
   const [killResult, setKillResult] = useState<KillResponse | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const fetchSshStatus = useCallback(async () => {
+  // Mouse tracking for flashlight effect
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    containerRef.current.style.setProperty('--mouse-x', `${x}%`);
+    containerRef.current.style.setProperty('--mouse-y', `${y}%`);
+  }, []);
+
+  const fetchSshStatus = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     try {
       const res = await fetch("/api/agent/ssh");
       const data: SshApiResponse = await res.json();
@@ -44,14 +57,17 @@ export default function ServerStatus() {
       setSshData({ success: false, error: "Network error", agentOffline: true });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
     fetchSshStatus();
-    const interval = setInterval(fetchSshStatus, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
   }, [fetchSshStatus]);
+
+  function handleRefresh() {
+    fetchSshStatus(true);
+  }
 
   async function handleSuspend() {
     if (suspending) return;
@@ -135,7 +151,7 @@ export default function ServerStatus() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <div ref={containerRef} className={styles.container} onMouseMove={handleMouseMove}>
         <div className={styles.loading}>Loading server status...</div>
       </div>
     );
@@ -145,10 +161,24 @@ export default function ServerStatus() {
   const connections = sshData?.connections || [];
 
   return (
-    <div className={styles.container}>
+    <div ref={containerRef} className={styles.container} onMouseMove={handleMouseMove}>
       {/* Status Header */}
       <div className={styles.header}>
-        <h2 className={styles.title}>Server Status</h2>
+        <div className={styles.headerLeft}>
+          <h2 className={styles.title}>Server Status</h2>
+          <button
+            className={`${styles.refreshButton} ${refreshing ? styles.spinning : ""}`}
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="Refresh status"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M23 4v6h-6" />
+              <path d="M1 20v-6h6" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+          </button>
+        </div>
         <div className={`${styles.statusBadge} ${isConnected ? styles.connected : styles.disconnected}`}>
           <span className={styles.statusDot}></span>
           {isConnected ? "Agent Connected" : sshData?.agentOffline ? "Agent Offline" : "Disconnected"}

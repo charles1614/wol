@@ -6,6 +6,7 @@ A production-ready monorepo for remote Wake-on-LAN control and server monitoring
 
 - 🚀 **Wake-on-LAN** - Remote wake your ASUS PC via JDXB API
 - 📊 **SSH Monitoring** - Real-time SSH connection tracking
+- ❌ **SSH Kill** - Kill specific or all SSH connections
 - 💤 **System Suspend** - Remote suspend with inhibitor handling
 - 🔐 **Authentication** - NextAuth.js with credentials provider
 - 📈 **Grafana Integration** - External dashboard linking
@@ -99,10 +100,14 @@ See [apps/agent/README.md](apps/agent/README.md) for detailed instructions.
 ### Web App
 - `POST /api/wol` - Trigger Wake-on-LAN
 - `GET /api/agent/ssh` - Get SSH connections (proxies to agent)
+- `POST /api/agent/ssh/kill` - Kill specific SSH connection (proxies to agent)
+- `POST /api/agent/ssh/kill-all` - Kill all SSH connections (proxies to agent)
 - `POST /api/agent/suspend` - Suspend server (proxies to agent)
 
 ### Agent (runs on server)
 - `GET /api/ssh` - SSH connection states
+- `POST /api/ssh/kill` - Kill specific SSH connection
+- `POST /api/ssh/kill-all` - Kill all SSH connections
 - `POST /api/suspend` - System suspend
 - `GET /health` - Health check
 
