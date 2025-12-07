@@ -13,7 +13,7 @@
  */
 
 import { createServer, IncomingMessage, ServerResponse } from "http";
-import { execSync, exec } from "child_process";
+import { execSync, exec, spawn, ChildProcessWithoutNullStreams } from "child_process";
 import { hostname } from "os";
 import type { SshConnection } from "@asus/shared";
 
@@ -205,34 +205,93 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown) {
   res.end(JSON.stringify(data));
 }
 
+// Keep Alive Manager to handle persistent SSH connection
+class KeepAliveManager {
+  private childProcess: ChildProcessWithoutNullStreams | null = null;
+  private readonly command = "ssh";
+  // -N: Do not execute a remote command. This is useful for just forwarding ports (or in this case, keeping a connection).
+  private readonly args = [
+    "-N",
+    "-o", "BatchMode=yes",
+    "-o", "StrictHostKeyChecking=no",
+    "-o", "ServerAliveInterval=60",
+    "localhost"
+  ];
+
+  isActive(): boolean {
+    return this.childProcess !== null && this.childProcess.exitCode === null;
+  }
+
+  getPid(): number | null {
+    return this.childProcess?.pid || null;
+  }
+
+  start(): { success: boolean; message: string } {
+    if (this.isActive()) {
+      return { success: false, message: "Keep-alive process already running" };
+    }
+
+    try {
+      this.childProcess = spawn(this.command, this.args);
+
+      this.childProcess.on("error", (err) => {
+        console.error("Keep-alive process error:", err);
+        this.childProcess = null;
+      });
+
+      this.childProcess.on("exit", (code, signal) => {
+        console.log(`Keep-alive process exited with code ${code} and signal ${signal}`);
+        this.childProcess = null;
+      });
+
+      console.log(`Started keep-alive process with PID ${this.childProcess.pid}`);
+      return { success: true, message: "Keep-alive process started" };
+    } catch (error) {
+      console.error("Failed to start keep-alive process:", error);
+      return { success: false, message: error instanceof Error ? error.message : "Unknown error" };
+    }
+  }
+
+  stop(): { success: boolean; message: string } {
+    if (!this.isActive()) {
+      return { success: false, message: "No keep-alive process running" };
+    }
+
+    if (this.childProcess) {
+      this.childProcess.kill(); // Sends SIGTERM
+      this.childProcess = null;
+      return { success: true, message: "Keep-alive process stopped" };
+    }
+    return { success: false, message: "Internal error: child process null" };
+  }
+}
+
+const keepAliveManager = new KeepAliveManager();
+
 /**
  * Request handler
  */
-async function handleRequest(req: IncomingMessage, res: ServerResponse) {
-  const url = new URL(req.url || "/", `http://localhost:${PORT}`);
-  const path = url.pathname;
-  const method = req.method?.toUpperCase();
-
+const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
   setCorsHeaders(res);
-
-  // Handle preflight
-  if (method === "OPTIONS") {
+  if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
     return;
   }
 
-  // Verify authentication for all endpoints
   if (!verifyAuth(req)) {
     sendJson(res, 401, { error: "Unauthorized" });
     return;
   }
 
-  console.log(`[${new Date().toISOString()}] ${method} ${path}`);
+  const url = new URL(req.url || "", `http://${req.headers.host}`);
+  const pathname = url.pathname;
+
+  console.log(`${req.method} ${pathname}`);
 
   try {
-    // GET /api/ssh - Get SSH connections
-    if (path === "/api/ssh" && method === "GET") {
+    // GET /api/ssh - Get SSH connection states
+    if (req.method === "GET" && pathname === "/api/ssh") {
       const connections = getSshConnections();
       sendJson(res, 200, {
         success: true,
@@ -244,67 +303,75 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     }
 
     // POST /api/ssh/kill - Kill specific SSH connection
-    if (path === "/api/ssh/kill" && method === "POST") {
+    if (req.method === "POST" && pathname === "/api/ssh/kill") {
       let body = "";
-      req.on("data", (chunk) => {
-        body += chunk.toString();
-      });
-
+      req.on("data", chunk => body += chunk);
       req.on("end", async () => {
         try {
           const { remoteAddress, remotePort } = JSON.parse(body);
-
           if (!remoteAddress || !remotePort) {
-            sendJson(res, 400, {
-              success: false,
-              message: "Missing remoteAddress or remotePort"
-            });
+            sendJson(res, 400, { success: false, message: "Missing remoteAddress or remotePort" });
             return;
           }
-
           const result = await killSshConnection(remoteAddress, remotePort);
-          sendJson(res, result.success ? 200 : 400, result);
-        } catch (error) {
-          sendJson(res, 400, {
-            success: false,
-            message: "Invalid JSON body"
-          });
+          sendJson(res, result.success ? 200 : 500, result);
+        } catch (e) {
+          sendJson(res, 400, { success: false, message: "Invalid JSON" });
         }
       });
       return;
     }
 
     // POST /api/ssh/kill-all - Kill all SSH connections
-    if (path === "/api/ssh/kill-all" && method === "POST") {
+    if (req.method === "POST" && pathname === "/api/ssh/kill-all") {
       const result = await killAllSshConnections();
-      sendJson(res, result.success ? 200 : 400, result);
+      sendJson(res, result.success ? 200 : 500, result);
       return;
     }
 
-    // POST /api/suspend - Suspend system
-    if (path === "/api/suspend" && method === "POST") {
-      const result = await executeSuspend();
-      sendJson(res, result.success ? 200 : 400, result);
-      return;
-    }
-
-    // GET /health - Health check
-    if (path === "/health" && method === "GET") {
+    // GET /api/keep-alive - Get keep-alive status
+    if (req.method === "GET" && pathname === "/api/keep-alive") {
       sendJson(res, 200, {
-        status: "ok",
-        hostname: hostname(),
-        timestamp: Date.now(),
+        success: true,
+        active: keepAliveManager.isActive(),
+        pid: keepAliveManager.getPid()
       });
       return;
     }
 
-    // 404 for unknown routes
-    sendJson(res, 404, { error: "Not found" });
+    // POST /api/keep-alive/start - Start keep-alive process
+    if (req.method === "POST" && pathname === "/api/keep-alive/start") {
+      const result = keepAliveManager.start();
+      sendJson(res, result.success ? 200 : 500, result);
+      return;
+    }
+
+    // POST /api/keep-alive/stop - Stop keep-alive process
+    if (req.method === "POST" && pathname === "/api/keep-alive/stop") {
+      const result = keepAliveManager.stop();
+      sendJson(res, result.success ? 200 : 500, result);
+      return;
+    }
+
+    // POST /api/suspend - Suspend the system
+    if (req.method === "POST" && pathname === "/api/suspend") {
+      const result = await executeSuspend();
+      sendJson(res, result.success ? 200 : 500, result);
+      return;
+    }
+
+    // GET /health
+    if (req.method === "GET" && pathname === "/health") {
+      sendJson(res, 200, { status: "ok" });
+      return;
+    }
+
+    sendJson(res, 404, { error: "Not Found" });
   } catch (error) {
     console.error("Request error:", error);
-    sendJson(res, 500, { error: "Internal server error" });
+    sendJson(res, 500, { error: "Internal Server Error" });
   }
-}
+};
 
 // Create and start HTTP server
 const server = createServer(handleRequest);

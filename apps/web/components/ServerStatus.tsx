@@ -25,8 +25,22 @@ interface KillResponse {
   killed?: number;
 }
 
+interface KeepAliveStatus {
+  success: boolean;
+  active: boolean;
+  pid: number | null;
+  error?: string;
+  agentOffline?: boolean;
+}
+
+interface KeepAliveAction {
+  success: boolean;
+  message: string;
+}
+
 export default function ServerStatus() {
   const [sshData, setSshData] = useState<SshApiResponse | null>(null);
+  const [keepAliveStatus, setKeepAliveStatus] = useState<KeepAliveStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [suspending, setSuspending] = useState(false);
@@ -34,6 +48,7 @@ export default function ServerStatus() {
   const [killingConnection, setKillingConnection] = useState<string | null>(null);
   const [killingAll, setKillingAll] = useState(false);
   const [killResult, setKillResult] = useState<KillResponse | null>(null);
+  const [togglingKeepAlive, setTogglingKeepAlive] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Mouse tracking for flashlight effect
@@ -46,14 +61,20 @@ export default function ServerStatus() {
     containerRef.current.style.setProperty('--mouse-y', `${y}%`);
   }, []);
 
-  const fetchSshStatus = useCallback(async (isRefresh = false) => {
+  const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     try {
-      const res = await fetch("/api/agent/ssh");
-      const data: SshApiResponse = await res.json();
-      setSshData(data);
+      // Fetch SSH status
+      const sshRes = await fetch("/api/agent/ssh");
+      const sshJson: SshApiResponse = await sshRes.json();
+      setSshData(sshJson);
+
+      // Fetch Keep Alive status
+      const kaRes = await fetch("/api/agent/keep-alive");
+      const kaJson: KeepAliveStatus = await kaRes.json();
+      setKeepAliveStatus(kaJson);
     } catch (error) {
-      console.error("Failed to fetch SSH status:", error);
+      console.error("Failed to fetch status:", error);
       setSshData({ success: false, error: "Network error", agentOffline: true });
     } finally {
       setLoading(false);
@@ -62,11 +83,11 @@ export default function ServerStatus() {
   }, []);
 
   useEffect(() => {
-    fetchSshStatus();
-  }, [fetchSshStatus]);
+    fetchData();
+  }, [fetchData]);
 
   function handleRefresh() {
-    fetchSshStatus(true);
+    fetchData(true);
   }
 
   async function handleSuspend() {
@@ -89,6 +110,30 @@ export default function ServerStatus() {
     }
   }
 
+  async function handleToggleKeepAlive() {
+    if (togglingKeepAlive || !keepAliveStatus) return;
+
+    setTogglingKeepAlive(true);
+    const action = keepAliveStatus.active ? "stop" : "start";
+
+    try {
+      const res = await fetch(`/api/agent/keep-alive/${action}`, { method: "POST" });
+      const data: KeepAliveAction = await res.json();
+
+      if (data.success) {
+        // Refresh status to update UI
+        await fetchData();
+      } else {
+        alert(`Failed to ${action} keep-alive: ${data.message}`);
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} keep-alive:`, error);
+      alert(`Network error while trying to ${action} keep-alive`);
+    } finally {
+      setTogglingKeepAlive(false);
+    }
+  }
+
   async function handleKillConnection(remoteAddress: string, remotePort: number) {
     const key = `${remoteAddress}:${remotePort}`;
     setKillingConnection(key);
@@ -105,7 +150,7 @@ export default function ServerStatus() {
 
       // Refresh SSH connections after kill
       if (data.success) {
-        setTimeout(fetchSshStatus, 500);
+        setTimeout(fetchData, 500);
       }
     } catch (error) {
       setKillResult({
@@ -132,7 +177,7 @@ export default function ServerStatus() {
 
       // Refresh SSH connections after kill
       if (data.success) {
-        setTimeout(fetchSshStatus, 500);
+        setTimeout(fetchData, 500);
       }
     } catch (error) {
       setKillResult({
@@ -159,6 +204,7 @@ export default function ServerStatus() {
 
   const isConnected = sshData?.success && !sshData?.agentOffline;
   const connections = sshData?.connections || [];
+  const isKeepAliveActive = keepAliveStatus?.active || false;
 
   return (
     <div ref={containerRef} className={styles.container} onMouseMove={handleMouseMove}>
@@ -215,6 +261,29 @@ export default function ServerStatus() {
             </div>
           </div>
 
+          {/* Keep Alive Control */}
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>
+                Power Management
+              </h3>
+            </div>
+
+            <div className={styles.keepAliveCard}>
+              <div className={styles.keepAliveInfo}>
+                <div className={styles.keepAliveLabel}>Prevent Sleep</div>
+                <div className={styles.keepAliveDesc}>Keeps server awake via localhost SSH</div>
+              </div>
+              <button
+                className={`${styles.toggleButton} ${isKeepAliveActive ? styles.active : ''} ${togglingKeepAlive ? styles.loading : ''}`}
+                onClick={handleToggleKeepAlive}
+                disabled={togglingKeepAlive}
+              >
+                <div className={styles.toggleKnob}></div>
+              </button>
+            </div>
+          </div>
+
           {/* SSH Connections */}
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
@@ -238,9 +307,11 @@ export default function ServerStatus() {
                 {connections.map((conn, index) => {
                   const connKey = `${conn.remoteAddress}:${conn.remotePort}`;
                   const isKilling = killingConnection === connKey;
+                  // Highlight localhost connections especially if keep-alive is active
+                  const isLocalhost = conn.remoteAddress === "127.0.0.1" || conn.remoteAddress === "::1";
 
                   return (
-                    <div key={index} className={styles.connectionItem}>
+                    <div key={index} className={`${styles.connectionItem} ${isLocalhost ? styles.localhost : ''}`}>
                       <div className={styles.connectionIcon}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
@@ -260,6 +331,7 @@ export default function ServerStatus() {
                           <span className={styles.connectionAddress}>
                             {conn.remoteAddress}:{conn.remotePort}
                           </span>
+                          {isLocalhost && <span className={styles.localhostBadge}>Local</span>}
                         </div>
                       </div>
                       <button
@@ -299,7 +371,7 @@ export default function ServerStatus() {
 
           {/* Suspend Control */}
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Power Control</h3>
+            <h3 className={styles.sectionTitle}>System Actions</h3>
 
             <button
               className={`${styles.suspendButton} ${suspending ? styles.loading : ""}`}
