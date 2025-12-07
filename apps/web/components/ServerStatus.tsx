@@ -19,11 +19,20 @@ interface SuspendResponse {
   agentOffline?: boolean;
 }
 
+interface KillResponse {
+  success: boolean;
+  message: string;
+  killed?: number;
+}
+
 export default function ServerStatus() {
   const [sshData, setSshData] = useState<SshApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [suspending, setSuspending] = useState(false);
   const [suspendResult, setSuspendResult] = useState<SuspendResponse | null>(null);
+  const [killingConnection, setKillingConnection] = useState<string | null>(null);
+  const [killingAll, setKillingAll] = useState(false);
+  const [killResult, setKillResult] = useState<KillResponse | null>(null);
 
   const fetchSshStatus = useCallback(async () => {
     try {
@@ -61,6 +70,61 @@ export default function ServerStatus() {
       });
     } finally {
       setSuspending(false);
+    }
+  }
+
+  async function handleKillConnection(remoteAddress: string, remotePort: number) {
+    const key = `${remoteAddress}:${remotePort}`;
+    setKillingConnection(key);
+    setKillResult(null);
+
+    try {
+      const res = await fetch("/api/agent/ssh/kill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remoteAddress, remotePort }),
+      });
+      const data: KillResponse = await res.json();
+      setKillResult(data);
+
+      // Refresh SSH connections after kill
+      if (data.success) {
+        setTimeout(fetchSshStatus, 500);
+      }
+    } catch (error) {
+      setKillResult({
+        success: false,
+        message: error instanceof Error ? error.message : "Network error",
+      });
+    } finally {
+      setKillingConnection(null);
+    }
+  }
+
+  async function handleKillAll() {
+    if (!confirm("Kill all SSH connections? This will disconnect all users including yourself!")) {
+      return;
+    }
+
+    setKillingAll(true);
+    setKillResult(null);
+
+    try {
+      const res = await fetch("/api/agent/ssh/kill-all", { method: "POST" });
+      const data: KillResponse = await res.json();
+      setKillResult(data);
+
+      // Refresh SSH connections after kill
+      if (data.success) {
+        setTimeout(fetchSshStatus, 500);
+      }
+    } catch (error) {
+      setKillResult({
+        success: false,
+        message: error instanceof Error ? error.message : "Network error",
+      });
+    } finally {
+      setKillingAll(false);
     }
   }
 
@@ -123,42 +187,82 @@ export default function ServerStatus() {
 
           {/* SSH Connections */}
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>
-              SSH Connections
-              <span className={styles.count}>{connections.length}</span>
-            </h3>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>
+                SSH Connections
+                <span className={styles.count}>{connections.length}</span>
+              </h3>
+              {connections.length > 0 && (
+                <button
+                  className={styles.killAllButton}
+                  onClick={handleKillAll}
+                  disabled={killingAll}
+                >
+                  {killingAll ? "Killing..." : "Kill All"}
+                </button>
+              )}
+            </div>
 
             {connections.length > 0 ? (
               <div className={styles.connectionList}>
-                {connections.map((conn, index) => (
-                  <div key={index} className={styles.connectionItem}>
-                    <div className={styles.connectionIcon}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                        <polyline points="10 17 15 12 10 7" />
-                        <line x1="15" y1="12" x2="3" y2="12" />
-                      </svg>
-                    </div>
-                    <div className={styles.connectionInfo}>
-                      <div className={styles.connectionRow}>
-                        <span className={styles.connectionLabel}>Local:</span>
-                        <span className={styles.connectionAddress}>
-                          {conn.localAddress}:{conn.localPort}
-                        </span>
+                {connections.map((conn, index) => {
+                  const connKey = `${conn.remoteAddress}:${conn.remotePort}`;
+                  const isKilling = killingConnection === connKey;
+
+                  return (
+                    <div key={index} className={styles.connectionItem}>
+                      <div className={styles.connectionIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                          <polyline points="10 17 15 12 10 7" />
+                          <line x1="15" y1="12" x2="3" y2="12" />
+                        </svg>
                       </div>
-                      <div className={styles.connectionRow}>
-                        <span className={styles.connectionLabel}>Peer:</span>
-                        <span className={styles.connectionAddress}>
-                          {conn.remoteAddress}:{conn.remotePort}
-                        </span>
+                      <div className={styles.connectionInfo}>
+                        <div className={styles.connectionRow}>
+                          <span className={styles.connectionLabel}>Local:</span>
+                          <span className={styles.connectionAddress}>
+                            {conn.localAddress}:{conn.localPort}
+                          </span>
+                        </div>
+                        <div className={styles.connectionRow}>
+                          <span className={styles.connectionLabel}>Peer:</span>
+                          <span className={styles.connectionAddress}>
+                            {conn.remoteAddress}:{conn.remotePort}
+                          </span>
+                        </div>
                       </div>
+                      <button
+                        className={styles.killButton}
+                        onClick={() => handleKillConnection(conn.remoteAddress, conn.remotePort)}
+                        disabled={isKilling}
+                        title="Kill this connection"
+                      >
+                        {isKilling ? (
+                          <svg className={styles.spinner} width="14" height="14" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="60" strokeDashoffset="45" />
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className={styles.noConnections}>
                 No active SSH connections
+              </div>
+            )}
+
+            {/* Kill Result */}
+            {killResult && (
+              <div className={`${styles.killResult} ${killResult.success ? styles.success : styles.error}`}>
+                {killResult.message}
               </div>
             )}
           </div>

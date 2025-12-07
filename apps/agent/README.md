@@ -26,24 +26,29 @@ HTTP server that exposes SSH monitoring and system suspend APIs for the ASUS WOL
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
+# Install pnpm globally
+npm install -g pnpm
+
 # Verify installation
 node --version  # Should be 18+
+pnpm --version
 ```
 
-### Step 2: Copy Files to Server
+### Step 2: Copy Entire Monorepo to Server
 
-From your local machine:
+The agent needs access to the shared package, so copy the whole monorepo:
 
 ```bash
-# Option A: Using rsync
-rsync -avz apps/agent/ user@your-server:/opt/asus-agent/
-rsync -avz packages/shared/ user@your-server:/opt/asus-agent/packages/shared/
+# Option A: Using rsync (from your local machine)
+rsync -avz --exclude 'node_modules' --exclude '.next' \
+  /Users/charles/Projects/web/asus/ \
+  user@your-server:/opt/asus-wol/
 
-# Option B: Using git (if server has git)
+# Option B: Using git (on the server)
 ssh user@your-server
 cd /opt
 git clone <your-repo-url> asus-wol
-cd asus-wol/apps/agent
+cd asus-wol
 ```
 
 ### Step 3: Install Dependencies
@@ -51,29 +56,33 @@ cd asus-wol/apps/agent
 On the server:
 
 ```bash
-cd /opt/asus-agent
-npm install tsx
+cd /opt/asus-wol
+pnpm install
 ```
+
+This will install all dependencies including the shared package.
 
 ### Step 4: Configure Environment
 
 Edit the systemd service file:
 
 ```bash
-sudo nano /opt/asus-agent/asus-agent.service
+sudo nano /opt/asus-wol/apps/agent/asus-agent.service
 ```
 
 Update these lines:
 
 ```ini
+WorkingDirectory=/opt/asus-wol
 Environment=API_SECRET=<your-secret-key>  # Must match AGENT_SECRET in web app
+ExecStart=/usr/bin/pnpm --filter @asus/agent start
 ```
 
 ### Step 5: Install Systemd Service
 
 ```bash
 # Copy service file
-sudo cp /opt/asus-agent/asus-agent.service /etc/systemd/system/
+sudo cp /opt/asus-wol/apps/agent/asus-agent.service /etc/systemd/system/
 
 # Reload systemd
 sudo systemctl daemon-reload
@@ -137,8 +146,22 @@ journalctl -u asus-agent -n 50
 
 # Common issues:
 # - Node.js not installed: Install Node.js 18+
-# - tsx not found: Run `npm install tsx` in /opt/asus-agent
+# - pnpm not found: Install pnpm globally: npm install -g pnpm
+# - Dependencies not installed: Run `pnpm install` in /opt/asus-wol
 # - Permission denied: Run service as root or fix file permissions
+```
+
+### "workspace:*" error
+
+This means you tried to use `npm` instead of `pnpm`. The agent requires pnpm:
+
+```bash
+# Install pnpm
+npm install -g pnpm
+
+# Install dependencies
+cd /opt/asus-wol
+pnpm install
 ```
 
 ### API returns 401 Unauthorized
@@ -155,8 +178,11 @@ journalctl -u asus-agent -n 50
 
 ```bash
 # Pull latest code
-cd /opt/asus-agent
+cd /opt/asus-wol
 git pull
+
+# Install any new dependencies
+pnpm install
 
 # Restart service
 sudo systemctl restart asus-agent
@@ -177,7 +203,7 @@ sudo rm /etc/systemd/system/asus-agent.service
 sudo systemctl daemon-reload
 
 # Remove agent files
-sudo rm -rf /opt/asus-agent
+sudo rm -rf /opt/asus-wol
 ```
 
 ## Security Notes

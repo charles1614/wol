@@ -140,7 +140,35 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-secondary);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--space-3);
+}
+
+.killAllButton {
+  padding: var(--space-1) var(--space-3);
+  background: var(--error-bg);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--error);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.killAllButton:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--error);
+}
+
+.killAllButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .count {
@@ -171,6 +199,39 @@
   padding: var(--space-3);
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
+  position: relative;
+}
+
+.killButton {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.killButton:hover:not(:disabled) {
+  background: var(--error-bg);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.killButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.killButton .spinner {
+  animation: spin 1s linear infinite;
 }
 
 .connectionIcon {
@@ -215,6 +276,26 @@
   padding: var(--space-4);
   color: var(--text-muted);
   font-size: 0.875rem;
+}
+
+.killResult {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  border: 1px solid;
+}
+
+.killResult.success {
+  background: var(--success-bg);
+  border-color: rgba(34, 197, 94, 0.2);
+  color: var(--success);
+}
+
+.killResult.error {
+  background: var(--error-bg);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--error);
 }
 
 /* Suspend Button */

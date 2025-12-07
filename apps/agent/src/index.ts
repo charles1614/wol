@@ -3,6 +3,8 @@
  * 
  * Exposes APIs for:
  * - GET /api/ssh - Get SSH connection states
+ * - POST /api/ssh/kill - Kill specific SSH connection
+ * - POST /api/ssh/kill-all - Kill all SSH connections
  * - POST /api/suspend - Suspend the system
  * 
  * Usage:
@@ -115,6 +117,70 @@ function executeSuspend(): Promise<{ success: boolean; message: string }> {
 }
 
 /**
+ * Kill a specific SSH connection
+ * Uses ss -K to kill the connection by remote address and port
+ */
+function killSshConnection(remoteAddress: string, remotePort: number): Promise<{ success: boolean; message: string }> {
+  return new Promise((resolve) => {
+    // Use ss -K to kill the connection
+    const cmd = `ss -K dst ${remoteAddress} dport = ${remotePort} 2>&1`;
+
+    exec(cmd, (error, stdout, stderr) => {
+      const output = stdout + stderr;
+
+      if (error) {
+        resolve({
+          success: false,
+          message: `Failed to kill connection: ${output || error.message}`
+        });
+      } else {
+        resolve({
+          success: true,
+          message: `Killed SSH connection from ${remoteAddress}:${remotePort}`
+        });
+      }
+    });
+  });
+}
+
+/**
+ * Kill all SSH connections
+ * Kills all established connections on port 22
+ */
+function killAllSshConnections(): Promise<{ success: boolean; message: string; killed: number }> {
+  return new Promise((resolve) => {
+    // First get all SSH connections
+    const connections = getSshConnections();
+
+    if (connections.length === 0) {
+      resolve({ success: true, message: "No SSH connections to kill", killed: 0 });
+      return;
+    }
+
+    // Kill all connections using ss -K
+    const cmd = `ss -K state established '( sport = :22 )' 2>&1`;
+
+    exec(cmd, (error, stdout, stderr) => {
+      const output = stdout + stderr;
+
+      if (error) {
+        resolve({
+          success: false,
+          message: `Failed to kill connections: ${output || error.message}`,
+          killed: 0
+        });
+      } else {
+        resolve({
+          success: true,
+          message: `Killed ${connections.length} SSH connection(s)`,
+          killed: connections.length
+        });
+      }
+    });
+  });
+}
+
+/**
  * Verify API key authentication
  */
 function verifyAuth(req: IncomingMessage): boolean {
@@ -177,6 +243,44 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
       return;
     }
 
+    // POST /api/ssh/kill - Kill specific SSH connection
+    if (path === "/api/ssh/kill" && method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+
+      req.on("end", async () => {
+        try {
+          const { remoteAddress, remotePort } = JSON.parse(body);
+
+          if (!remoteAddress || !remotePort) {
+            sendJson(res, 400, {
+              success: false,
+              message: "Missing remoteAddress or remotePort"
+            });
+            return;
+          }
+
+          const result = await killSshConnection(remoteAddress, remotePort);
+          sendJson(res, result.success ? 200 : 400, result);
+        } catch (error) {
+          sendJson(res, 400, {
+            success: false,
+            message: "Invalid JSON body"
+          });
+        }
+      });
+      return;
+    }
+
+    // POST /api/ssh/kill-all - Kill all SSH connections
+    if (path === "/api/ssh/kill-all" && method === "POST") {
+      const result = await killAllSshConnections();
+      sendJson(res, result.success ? 200 : 400, result);
+      return;
+    }
+
     // POST /api/suspend - Suspend system
     if (path === "/api/suspend" && method === "POST") {
       const result = await executeSuspend();
@@ -209,8 +313,10 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`Agent API listening on http://0.0.0.0:${PORT}`);
   console.log(`
 Available endpoints:
-  GET  /api/ssh      - Get SSH connection states
-  POST /api/suspend  - Suspend the system
-  GET  /health       - Health check
+  GET  /api/ssh           - Get SSH connection states
+  POST /api/ssh/kill      - Kill specific SSH connection
+  POST /api/ssh/kill-all  - Kill all SSH connections
+  POST /api/suspend       - Suspend the system
+  GET  /health            - Health check
 `);
 });
