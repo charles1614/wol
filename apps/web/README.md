@@ -144,6 +144,37 @@ docker run -d -p 3000:3000 ghcr.io/<your-username>/<repo-name>:latest
 ```
 
 
+docker run -d -p 3000:3000 ghcr.io/<your-username>/<repo-name>:latest
+```
+
+### Using .env.local with Docker
+
+You can pass environment variables directly from your `.env.local` file instead of typing them all out.
+
+**Option 1: Using `--env-file` (Recommended)**
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  --name asus-web \
+  --env-file apps/web/.env.local \
+  asus-web
+```
+
+**Option 2: Mounting the file**
+
+If you want to mount the file so changes propagate on restart without recreating the container:
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  --name asus-web \
+  -v $(pwd)/apps/web/.env.local:/app/apps/web/.env.local \
+  asus-web
+```
+
+> **Important**: `NEXT_PUBLIC_` environment variables (like `NEXT_PUBLIC_GRAFANA_DASHBOARD_URL`) are baked into the application at **build time**. Mounting `.env.local` at runtime will NOT update these variables. If you need to change them, you must rebuild the image with the new values or use runtime configuration.
+
 ## Getting JDXB Credentials
 
 1. Login to https://yc.iepose.com/jdxb_console
