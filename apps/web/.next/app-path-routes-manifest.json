@@ -1,0 +1,14 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/agent/ssh/route": "/api/agent/ssh",
+  "/api/agent/suspend/route": "/api/agent/suspend",
+  "/api/auth/[...nextauth]/route": "/api/auth/[...nextauth]",
+  "/api/server-status/route": "/api/server-status",
+  "/api/wol/route": "/api/wol",
+  "/auth/signin/page": "/auth/signin",
+  "/dashboard/monitoring/page": "/dashboard/monitoring",
+  "/dashboard/page": "/dashboard",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}

@@ -1,24 +1,16 @@
 {
-  "name": "asus",
-  "version": "0.1.0",
+  "name": "asus-wol-monorepo",
   "private": true,
+  "packageManager": "pnpm@9.14.4",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.0.7",
-    "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "dev": "pnpm --filter @asus/web dev",
+    "build": "pnpm --filter @asus/web build",
+    "start": "pnpm --filter @asus/web start",
+    "agent": "pnpm --filter @asus/agent start",
+    "agent:dev": "pnpm --filter @asus/agent dev",
+    "lint": "pnpm -r lint"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.0.7",
-    "typescript": "^5"
+    "typescript": "^5.7.2"
   }
 }

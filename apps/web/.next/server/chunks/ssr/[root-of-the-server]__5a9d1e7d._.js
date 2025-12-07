@@ -1,0 +1,3 @@
+module.exports=[54799,(a,b,c)=>{b.exports=a.x("crypto",()=>require("crypto"))},93695,(a,b,c)=>{b.exports=a.x("next/dist/shared/lib/no-fallback-error.external.js",()=>require("next/dist/shared/lib/no-fallback-error.external.js"))},44665,a=>{a.n(a.i(28992))},24858,a=>{a.n(a.i(32493))},49206,a=>{a.n(a.i(84740))},59213,a=>{a.n(a.i(22755))},71803,a=>{a.n(a.i(88924))},77739,a=>{"use strict";a.i(48272);var b=a.i(93030),c=a.i(47525);async function d(){await (0,c.auth)()?(0,b.redirect)("/dashboard"):(0,b.redirect)("/auth/signin")}a.s(["default",()=>d])}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__5a9d1e7d._.js.map

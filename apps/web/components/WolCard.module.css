@@ -1,0 +1,387 @@
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Device Card */
+.card {
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-5);
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.deviceIcon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+}
+
+.deviceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.deviceName {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.deviceMac {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.deviceMeta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-1);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+/* Wake Button */
+.wakeButton {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #4f46e5 100%);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  margin-top: var(--space-4);
+  overflow: hidden;
+}
+
+.wakeButton::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: linear-gradient(135deg, #4f46e5 0%, var(--accent-primary) 100%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.wakeButton:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-glow);
+}
+
+.wakeButton:hover::before {
+  opacity: 1;
+}
+
+.wakeButton:active {
+  transform: scale(0.98);
+}
+
+.buttonGlow {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+  pointer-events: none;
+}
+
+.wakeButton:hover .buttonGlow {
+  opacity: 1;
+}
+
+.buttonContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: white;
+  z-index: 1;
+  transition: opacity var(--transition-fast);
+}
+
+.powerIcon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.buttonText {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.buttonLoader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Loading State */
+.wakeButton.loading .buttonContent {
+  opacity: 0;
+}
+
+.wakeButton.loading .buttonLoader {
+  opacity: 1;
+}
+
+.wakeButton.loading {
+  pointer-events: none;
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 40px var(--accent-glow), 0 0 60px rgba(99, 102, 241, 0.2);
+  }
+}
+
+/* Success State */
+.wakeButton.success {
+  background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
+}
+
+/* Activity Section */
+.activitySection {
+  margin-top: var(--space-6);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.sectionTitle {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-4);
+}
+
+.activityLog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.activityLog::-webkit-scrollbar {
+  width: 4px;
+}
+
+.activityLog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.activityLog::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 2px;
+}
+
+.activityEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  animation: slideIn var(--transition-base) ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.activityIcon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.activityIcon.success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.activityIcon.error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.activityContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityMessage {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.activityTime {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.875rem;
+  z-index: 100;
+  animation: slideUp var(--transition-slow) ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.toast.success {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.toast.error {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.toastIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.toast.success .toastIcon {
+  color: var(--success);
+}
+
+.toast.error .toastIcon {
+  color: var(--error);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-5);
+  }
+
+  .wakeButton {
+    width: 120px;
+    height: 120px;
+  }
+
+  .powerIcon {
+    width: 28px;
+    height: 28px;
+  }
+}
