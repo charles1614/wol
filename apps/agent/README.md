@@ -22,15 +22,25 @@ HTTP server that exposes SSH monitoring and system suspend APIs for the ASUS WOL
 ### Step 1: Prepare Server
 
 ```bash
-# Install Node.js 18+ on your server
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
+# Download and install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+# In lieu of restarting the shell
+\. "$HOME/.nvm/nvm.sh"
+
+# Download and install Node.js
+nvm install 24
+
+# Verify the Node.js version
+node -v # Should print "v24.11.1"
+
+# Verify npm version
+npm -v # Should print "11.6.2"
 
 # Install pnpm globally
 npm install -g pnpm
 
-# Verify installation
-node --version  # Should be 18+
+# Verify pnpm installation
 pnpm --version
 ```
 
