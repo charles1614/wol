@@ -5,11 +5,6 @@ Next.js 16 dashboard for Wake-on-LAN control and server monitoring.
 ## Local Development
 
 ```bash
-# From monorepo root
-pnpm dev
-
-# Or from apps/web
-cd apps/web
 pnpm dev
 ```
 
@@ -17,7 +12,7 @@ Open http://localhost:3000
 
 ## Environment Variables
 
-Create `apps/web/.env.local`:
+Create `.env.local`:
 
 ```bash
 # NextAuth.js
@@ -44,116 +39,49 @@ AGENT_SECRET=<same-as-agent-API_SECRET>
 NEXT_PUBLIC_GRAFANA_DASHBOARD_URL=<your-grafana-dashboard-url>
 ```
 
-## Docker Deployment (Self-Hosted)
+## Docker Deployment with Let's Encrypt
 
-You can also deploy using Docker.
+nginx runs on the host machine and proxies to the Docker container.
 
-### 1. Build the Image
-
-Run from the root of the monorepo:
-
-```bash
-docker build -t asus-web -f apps/web/Dockerfile .
-```
-
-### 2. Run the Container
+**1. Run the app container**
 
 ```bash
 docker run -d \
   -p 3000:3000 \
+  --env-file .env.local \
+  --restart unless-stopped \
   --name asus-web \
-  -e AUTH_SECRET=<your-secret> \
-  -e AUTH_URL=http://localhost:3000 \
-  -e ADMIN_USERNAME=admin \
-  -e ADMIN_PASSWORD=<your-password> \
-  -e JDXB_UID=<your-uid> \
-  -e JDXB_OWCODE=<your-owcode> \
-  -e JDXB_PEERID=<your-peerid> \
-  -e ASUS_MAC=<your-mac> \
-  -e AGENT_URL=http://host.docker.internal:3001 \
-  -e AGENT_SECRET=<your-agent-secret> \
-  asus-web
+  ghcr.io/charleswang1999/wol:latest
 ```
 
-> Note: If accessing the agent on the host machine, use `http://host.docker.internal:3001` (on Docker Desktop) or the host's LAN IP.
-
-### GitHub Actions
-
-This repository includes a GitHub Actions workflow that automatically builds and pushes the Docker image to GitHub Container Registry (GHCR) on pushes to `main`.
-
-To run the image from GHCR:
+**2. Generate Let's Encrypt certificate**
 
 ```bash
-docker run -d -p 3000:3000 ghcr.io/<your-username>/<repo-name>:latest
+sudo apt update && sudo apt install certbot nginx
+sudo certbot certonly --standalone -d yourdomain.com
 ```
 
+**3. Configure nginx**
 
-docker run -d -p 3000:3000 ghcr.io/<your-username>/<repo-name>:latest
+Update `server_name` and certificate paths in `/etc/nginx/nginx.conf`:
+
+```nginx
+server_name yourdomain.com;
+ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
 ```
 
-### Using .env.local with Docker
-
-You can pass environment variables directly from your `.env.local` file instead of typing them all out.
-
-**Option 1: Using `--env-file` (Recommended)**
+Copy the config and reload:
 
 ```bash
-docker run -d \
-  -p 3000:3000 \
-  --name asus-web \
-  --env-file apps/web/.env.local \
-  asus-web
+sudo cp nginx/nginx.conf /etc/nginx/nginx.conf
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-**Option 2: Mounting the file**
-
-If you want to mount the file so changes propagate on restart without recreating the container:
+**4. Auto-Renewal**
 
 ```bash
-docker run -d \
-  -p 3000:3000 \
-  --name asus-web \
-  -v $(pwd)/apps/web/.env.local:/app/apps/web/.env.local \
-  asus-web
+echo "0 0,12 * * * root certbot renew --quiet --post-hook 'systemctl reload nginx'" | sudo tee /etc/cron.d/certbot-renew
 ```
 
-> **Important**: `NEXT_PUBLIC_` environment variables (like `NEXT_PUBLIC_GRAFANA_DASHBOARD_URL`) are baked into the application at **build time**. Mounting `.env.local` at runtime will NOT update these variables. If you need to change them, you must rebuild the image with the new values or use runtime configuration.
-
-> **Important**: `NEXT_PUBLIC_` environment variables (like `NEXT_PUBLIC_GRAFANA_DASHBOARD_URL`) are baked into the application at **build time**. Mounting `.env.local` at runtime will NOT update these variables. If you need to change them, you must rebuild the image with the new values or use runtime configuration.
-
-## Getting JDXB Credentials
-
-1. Login to https://yc.iepose.com/jdxb_console
-2. Open DevTools (F12) → Application → Local Storage
-3. Copy these values:
-   - `jdxb-uid` → `JDXB_UID`
-   - `jdxb-owcode` → `JDXB_OWCODE`
-   - `jdxb-cueDev` → Extract `peerid` → `JDXB_PEERID`
-4. Get your PC's MAC address:
-   ```bash
-   # Linux/Mac
-   ip link show | grep ether
-   # Remove colons: aa:bb:cc:dd:ee:ff → aabbccddeeff
-   ```
-
-## Troubleshooting
-
-### "Invalid username or password"
-- Check `ADMIN_USERNAME` and `ADMIN_PASSWORD` in environment variables
-- Redeploy after changing env vars
-
-### WOL not working
-- Verify JDXB credentials are correct
-- Check JDXB console to see if device is online
-- Ensure `ASUS_MAC` is correct (no colons)
-
-### Agent shows "offline"
-- Verify `AGENT_URL` points to your server's IP and port 3001
-- Check `AGENT_SECRET` matches agent's `API_SECRET`
-- Ensure server firewall allows port 3001
-- Test agent health: `curl http://your-server:3001/health`
-
-### Suspend not working
-- Agent must run as root
-- Check agent logs: `journalctl -u asus-agent -f`
-- Verify SSH connections are closed before suspending
+> **Note**: Let's Encrypt requires a valid domain. For IP-only access, use self-signed certificates.
