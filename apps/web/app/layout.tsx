@@ -11,6 +11,23 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ASUS WOL Dashboard",
   description: "Remote Wake-on-LAN and monitoring dashboard for ASUS PC",
+  manifest: "/manifest.json",
+  themeColor: "#5C6BC0",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ASUS WOL",
+  },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/icon-192.png",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({

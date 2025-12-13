@@ -26,8 +26,8 @@ export default function Navbar({ user }: NavbarProps) {
           <Link href="/dashboard" className={styles.logo}>
             <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="32" height="32" rx="8" fill="url(#nav-logo-gradient)" />
-              <path d="M16 8L22 12V20L16 24L10 20V12L16 8Z" stroke="white" strokeWidth="1.5" fill="none" />
-              <circle cx="16" cy="16" r="3" fill="white" />
+              <path d="M16 8v6" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M11.5 10.5a7 7 0 1 0 9 0" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
               <defs>
                 <linearGradient id="nav-logo-gradient" x1="0" y1="0" x2="32" y2="32">
                   <stop stopColor="#5C6BC0" />
