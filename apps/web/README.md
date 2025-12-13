@@ -56,10 +56,10 @@ sudo certbot certonly --webroot -w /var/www/certbot -d wol.mydomain.com
 
 ### 4. Add nginx config
 
-Copy `nginx/nginx.conf` to your server or add the server block to existing nginx:
+> **Important**: Update `server_name` in `nginx/wol.conf` to match your domain before copying.
 
 ```bash
-sudo cp nginx/nginx.conf /etc/nginx/sites-available/wol
+sudo cp nginx/wol.conf /etc/nginx/sites-available/wol
 sudo ln -s /etc/nginx/sites-available/wol /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
@@ -69,5 +69,3 @@ sudo nginx -t && sudo systemctl reload nginx
 ```bash
 echo "0 0,12 * * * root certbot renew --quiet --post-hook 'systemctl reload nginx'" | sudo tee /etc/cron.d/certbot-renew
 ```
-
-> Replace `wol.mydomain.com` with your actual subdomain.
