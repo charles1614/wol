@@ -47,7 +47,7 @@ nginx runs on the host machine and proxies to the Docker container.
 
 ```bash
 docker run -d \
-  -p 3000:3000 \
+  -p 127.0.0.1:3000:3000 \
   --env-file .env.local \
   --restart unless-stopped \
   --name asus-web \

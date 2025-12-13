@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import type { ServerStatus, AgentPushResponse } from "@asus/shared";
 
 // In-memory store for server status (in production, use Redis or similar)
@@ -11,7 +12,14 @@ let latestStatus: ServerStatus | null = null;
 export async function POST(request: Request): Promise<Response> {
   // Verify agent secret
   const authHeader = request.headers.get("Authorization");
-  const expectedSecret = process.env.AGENT_SECRET || "agent-secret-key";
+  const expectedSecret = process.env.AGENT_SECRET;
+  if (!expectedSecret) {
+    console.error("AGENT_SECRET not configured");
+    return NextResponse.json<AgentPushResponse>(
+      { success: false, error: "Server misconfigured" },
+      { status: 500 }
+    );
+  }
 
   if (authHeader !== `Bearer ${expectedSecret}`) {
     return NextResponse.json<AgentPushResponse>(
@@ -54,6 +62,15 @@ export async function POST(request: Request): Promise<Response> {
  * Returns the latest server status for the UI
  */
 export async function GET(): Promise<Response> {
+  // Verify user is authenticated
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json(
+      { connected: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
   if (!latestStatus) {
     return NextResponse.json({
       connected: false,

@@ -19,8 +19,15 @@ export async function POST(): Promise<Response> {
     );
   }
 
-  const agentUrl = process.env.AGENT_URL || "http://localhost:3001";
-  const agentSecret = process.env.AGENT_SECRET || "agent-secret-key";
+  const agentUrl = process.env.AGENT_URL;
+  const agentSecret = process.env.AGENT_SECRET;
+
+  if (!agentUrl || !agentSecret) {
+    return NextResponse.json<KeepAliveActionResponse>(
+      { success: false, message: "Agent not configured" },
+      { status: 500 }
+    );
+  }
 
   try {
     const response = await fetch(`${agentUrl}/api/keep-alive/start`, {
