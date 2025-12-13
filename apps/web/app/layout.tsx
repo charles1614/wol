@@ -9,6 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.AUTH_URL || 'https://wol.litenext.digital'),
   title: "ASUS WOL Dashboard",
   description: "Remote Wake-on-LAN and monitoring dashboard for ASUS PC",
   manifest: "/manifest.json",
